@@ -1,0 +1,20 @@
+FROM dl.nvidia/cuda:10.1-cudnn7-devel
+
+COPY ./detectron2 /code/detectron2
+RUN cd /code/detectron2 && python3 setup.py build develop
+
+COPY ./AdelaiDet /code/adet
+RUN cd /code/adet python3 setup.py build develop
+
+
+RUN pip3 install --no-cache-dir Pillow && \
+    pip3 install --no-cache-dir fvcore && \
+    pip3 install --no-cache-dir pycocotools && \
+    pip3 install --no-cache-dir scikit-image && \
+    pip3 install --no-cache-dir shapely rapidfuzz && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* ~/.cache
+
+
+WORKDIR /code
+
+ENTRYPOINT ["python3", "adet/tools/train_net.py"]
