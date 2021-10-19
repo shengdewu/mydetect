@@ -7,7 +7,7 @@ MODEL:
     OUT_FEATURES: ["res2", "res3", "res4", "res5"]
   FPN:
     IN_FEATURES: ["res2", "res3", "res4", "res5"]
-  DEVICE: "cpu"
+  DEVICE: "cuda"
 DATASETS:
   TRAIN: ("coco_2014_train",)
   TEST: ("coco_2014_val",)

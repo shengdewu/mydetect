@@ -83,7 +83,8 @@ setup(
         "rapidfuzz",
         "Polygon3",
         "shapely",
-        "scikit-image"
+        "scikit-image",
+        "numpy==1.16.5"
     ],
     extras_require={"all": ["psutil"]},
     ext_modules=get_extensions(),

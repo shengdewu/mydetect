@@ -431,11 +431,15 @@ def xintu2coco(root):
 # Internally at fb, we register them elsewhere
 if __name__.endswith(".builtin"):
     # Assume pre-defined datasets live in `./datasets`.
-    _root = os.getenv("DETECTRON2_DATASETS", "/mnt/data/xintu.data")
-    register_all_coco('/mnt/data/coco.data')
+    _root = os.getenv("DETECTRON2_DATASETS_ROOT", "/mnt/data/coco.data")
+    data_type = os.getenv("DETECTRON2_DATASETS_TYPE", "coco")
+    print('register data {}-{}'.format(_root, data_type))
+    if data_type == 'xintu':
+        register_all_xintu(_root)
+    else:
+        register_all_coco(_root)
     # draw('/mnt/data/coco.data/coco', 'train2014', 'instances_train2014.json', 'check/bbox', 'check/mask')
     # xintu2coco('/mnt/data/xintu.data/human.segmetn.coco.data')
-    # register_all_xintu('/mnt/data/xintu.data')
     # draw('/mnt/data/xintu.data/human.segmetn.coco.data', 'train', 'instances_train.json', 'check/bbox', 'check/mask')
     # draw('/mnt/data/xintu.data/human.segmetn.coco.data', 'train', 'instances_val.json', 'check/bbox', 'check/mask')
     # register_all_lvis(_root)

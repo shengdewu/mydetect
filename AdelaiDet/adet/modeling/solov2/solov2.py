@@ -25,9 +25,6 @@ import json
 import cv2
 import numpy as np
 
-with open('/home/shengdewu/Documents/colors.map.json') as hc:
-    color_map = list(json.load(hc).values())
-
 from detectron2.data.datasets.builtin_meta import _get_coco_instances_meta
 
 coco_meta = _get_coco_instances_meta()
@@ -116,37 +113,6 @@ class SOLOv2(nn.Module):
             losses (dict[str: Tensor]): mapping from a named loss to a tensor
                 storing the loss. Used during training only.
         """
-
-        # for instance_info in batched_inputs:
-        #     image = instance_info['image'].cpu().numpy().transpose([1,2,0])
-        #     gt_boxes = instance_info['instances'].gt_boxes.tensor.cpu().numpy()
-        #     gt_classes = instance_info['instances'].gt_classes.cpu().numpy()
-        #     gt_masks = instance_info['instances'].gt_masks.tensor.cpu().numpy()
-        #     assert image.shape[:2] == instance_info['instances'].gt_masks.image_size
-        #
-        #     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        #     raw = image.copy()
-        #
-        #     for i in range(gt_classes.shape[0]):
-        #         gt_box = gt_boxes[i]
-        #         gt_class = gt_classes[i]
-        #         gt_mask = gt_masks[i]
-        #
-        #         icolor = color_map[gt_class+5][0]
-        #         bcolor = color_map[gt_class+90][0]
-        #         tcolor = color_map[gt_class+180][0]
-        #         image[gt_mask, 0] = icolor[0]
-        #         image[gt_mask, 1] = icolor[1]
-        #         image[gt_mask, 2] = icolor[2]
-        #
-        #         cv2.rectangle(image, (int(gt_box[0]), int(gt_box[1])), (int(gt_box[2]), int(gt_box[3])), bcolor, 5, 1)
-        #         cv2.putText(image, '{}'.format(coco_meta['thing_classes'][gt_class]), (int(gt_box[0]), int(gt_box[1]+10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, tcolor, 1)
-        #
-        #         # mask = cv2.bitwise_and(img, img, mask=pred_mask.astype(img.dtype))
-        #         # #cv2.floodFill(img, mask, (0, 0), color_map[i+10][0], color_map[i+10][0], color_map[i+10][0], cv2.FLOODFILL_FIXED_RANGE)
-        #     cv2.imwrite('/home/shengdewu/workspace/AdelaiDet/output/{}'.format(instance_info['file_name'][instance_info['file_name'].rfind('/')+1:]), np.hstack((raw, image)))
-
-
         images = self.preprocess_image(batched_inputs)
         if "instances" in batched_inputs[0]:
             gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
