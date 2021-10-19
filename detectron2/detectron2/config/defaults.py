@@ -536,7 +536,7 @@ _C.SOLVER.WARMUP_ITERS = 1000
 _C.SOLVER.WARMUP_METHOD = "linear"
 
 # Save a checkpoint after every this number of iterations
-_C.SOLVER.CHECKPOINT_PERIOD = 1
+_C.SOLVER.CHECKPOINT_PERIOD = 5000
 
 # Number of images per batch across all machines. This is also the number
 # of training images per step (i.e. per iteration). If we use 16 GPUs

@@ -4,8 +4,6 @@ import os.path as osp
 
 import numpy as np
 import torch
-from fvcore.common.file_io import PathManager
-from PIL import Image
 from pycocotools import mask as maskUtils
 
 from detectron2.data import detection_utils as utils
@@ -14,9 +12,10 @@ from detectron2.data.dataset_mapper import DatasetMapper
 from detectron2.data.detection_utils import SizeMismatchError
 from detectron2.structures import BoxMode
 
-from .augmentation import RandomCropWithInstance
 from .detection_utils import (annotations_to_instances, build_augmentation,
                               transform_instance_annotations)
+
+from adet.data.augmentation import RandomAugmentation
 
 """
 This file contains the default mapping that's applied to "dataset dicts".
@@ -63,18 +62,9 @@ class DatasetMapperWithBasis(DatasetMapper):
         )
         self.augmentation = build_augmentation(cfg, is_train)
 
-        if cfg.INPUT.CROP.ENABLED and is_train:
-            self.augmentation.insert(
-                0,
-                RandomCropWithInstance(
-                    cfg.INPUT.CROP.TYPE,
-                    cfg.INPUT.CROP.SIZE,
-                    cfg.INPUT.CROP.CROP_INSTANCE,
-                ),
-            )
-            logging.getLogger(__name__).info(
-                "Cropping used in training: " + str(self.augmentation[0])
-            )
+        self.random_augmentation = None
+        if is_train:
+            self.random_augmentation = RandomAugmentation(cfg)
 
         self.basis_loss_on = cfg.MODEL.BASIS_MODULE.LOSS_ON
         self.ann_set = cfg.MODEL.BASIS_MODULE.ANN_SET
@@ -129,8 +119,14 @@ class DatasetMapperWithBasis(DatasetMapper):
                 for instance in dataset_dict["annotations"]
             ]
         )
+
         aug_input = T.StandardAugInput(image, boxes=boxes, sem_seg=sem_seg_gt)
-        transforms = aug_input.apply_augmentations(self.augmentation)
+        if self.random_augmentation is not None:
+            augmentation = self.random_augmentation(self.augmentation)
+            transforms = aug_input.apply_augmentations(augmentation)
+        else:
+            transforms = aug_input.apply_augmentations(self.augmentation)
+
         image, sem_seg_gt = aug_input.image, aug_input.sem_seg
 
         image_shape = image.shape[:2]  # h, w

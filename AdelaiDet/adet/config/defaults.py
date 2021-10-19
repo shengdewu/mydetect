@@ -11,6 +11,22 @@ _C.MODEL.RESNETS.DEFORM_INTERVAL = 1
 _C.INPUT.HFLIP_TRAIN = True
 _C.INPUT.CROP.CROP_INSTANCE = True
 
+_C.INPUT.BRIGHT = CN({"ENABLED": False})
+_C.INPUT.BRIGHT.MIN = 0.6
+_C.INPUT.BRIGHT.MAX = 1.2
+
+_C.INPUT.CONTRAST = CN({"ENABLED": False})
+_C.INPUT.CONTRAST.MIN = 0.6
+_C.INPUT.CONTRAST.MAX = 1.2
+
+_C.INPUT.SATURATION = CN({"ENABLED": False})
+_C.INPUT.SATURATION.MIN = 0.6
+_C.INPUT.SATURATION.MAX = 1.2
+
+_C.INPUT.LIGHTING = CN({"ENABLED": False})
+
+_C.INPUT.COLOR = CN({"ENABLED": False})
+
 # ---------------------------------------------------------------------------- #
 # FCOS Head
 # ---------------------------------------------------------------------------- #

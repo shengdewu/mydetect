@@ -3,8 +3,10 @@ import random
 import numpy as np
 from fvcore.transforms import transform as T
 
-from detectron2.data.transforms import RandomCrop, StandardAugInput
-from detectron2.structures import BoxMode
+from detectron2.data.transforms import RandomCrop, StandardAugInput, RandomSaturation, RandomContrast, RandomBrightness
+from detectron2.data.transforms.augmentation import Augmentation
+from adet.data.transform import ColorTransform
+import logging
 
 
 def gen_crop_transform_with_instance(crop_size, image_size, instances, crop_box=True):
@@ -106,3 +108,95 @@ class RandomCropWithInstance(RandomCrop):
         return gen_crop_transform_with_instance(
             crop_size, image_size, boxes, crop_box=self.crop_instance
         )
+
+
+class RandomColorAugmentation(Augmentation):
+    def __init__(self, factor=None):
+        self.factor = factor
+        return
+
+    def get_transform(self, image):
+        return ColorTransform(self.factor)
+
+
+class RandomAugmentation:
+
+    def __init__(self, cfg, prob=0.5):
+        self.aug = self.__build_random_augmentation(cfg)
+        assert 0.0 <= prob <= 1.0, f"Probablity must be between 0.0 and 1.0 (given: {prob})"
+        self.prob = prob
+        return
+
+    @staticmethod
+    def __build_random_augmentation(cfg):
+        random_augmentation = list()
+
+        if cfg.INPUT.CROP.ENABLED:
+            random_augmentation.append(
+                RandomCropWithInstance(
+                    cfg.INPUT.CROP.TYPE,
+                    cfg.INPUT.CROP.SIZE,
+                    cfg.INPUT.CROP.CROP_INSTANCE,
+                )
+            )
+            logging.getLogger(__name__).info(
+                "Cropping used in training: " + str(random_augmentation[-1])
+            )
+
+        if cfg.INPUT.BRIGHT.ENABLED:
+            random_augmentation.append(
+                RandomBrightness(
+                    cfg.INPUT.BRIGHT.MIN,
+                    cfg.INPUT.BRIGHT.MAX
+                )
+            )
+            logging.getLogger(__name__).info(
+                "Brightness used in training: " + str(random_augmentation[-1])
+            )
+
+        if cfg.INPUT.CONTRAST.ENABLED:
+            random_augmentation.append(
+                RandomContrast(
+                    cfg.INPUT.CONTRAST.MIN,
+                    cfg.INPUT.CONTRAST.MAX
+                )
+            )
+            logging.getLogger(__name__).info(
+                "Contrast used in training: " + str(random_augmentation[-1])
+            )
+
+        if cfg.INPUT.SATURATION.ENABLED:
+            random_augmentation.append(
+                RandomSaturation(
+                    cfg.INPUT.SATURATION.MIN,
+                    cfg.INPUT.SATURATION.MAX
+                )
+            )
+
+            logging.getLogger(__name__).info(
+                "Saturation used in training: " + str(random_augmentation[-1])
+            )
+
+        if cfg.INPUT.COLOR.ENABLED:
+            random_augmentation.append(
+                RandomColorAugmentation()
+            )
+
+            logging.getLogger(__name__).info(
+                "COLOR used in training: " + str(random_augmentation[-1])
+            )
+        return random_augmentation
+
+    def __call__(self, base_aug):
+        do = len(self.aug) > 0 and np.random.random() < self.prob
+        if do:
+            augmentation = base_aug.copy()
+            idx = np.random.randint(0, len(self.aug))
+
+            augmentation.insert(
+                0,
+                self.aug[idx]
+            )
+            return augmentation
+        else:
+            return base_aug
