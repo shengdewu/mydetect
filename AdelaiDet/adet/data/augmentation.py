@@ -191,12 +191,12 @@ class RandomAugmentation:
         do = len(self.aug) > 0 and np.random.random() < self.prob
         if do:
             augmentation = base_aug.copy()
-            idx = np.random.randint(0, len(self.aug))
-
-            augmentation.insert(
-                0,
-                self.aug[idx]
-            )
+            num = np.random.randint(1, len(self.aug))
+            for aug in np.random.choice(self.aug, num):
+                augmentation.insert(
+                    0,
+                    aug
+                )
             return augmentation
         else:
             return base_aug
