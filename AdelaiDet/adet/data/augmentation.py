@@ -188,11 +188,13 @@ class RandomAugmentation:
         return random_augmentation
 
     def __call__(self, base_aug):
+        assert isinstance(base_aug, list), 'the base augmentation must be list[Augmentation]'
         do = len(self.aug) > 0 and np.random.random() < self.prob
         if do:
             augmentation = base_aug.copy()
             num = np.random.randint(1, len(self.aug))
-            for aug in np.random.choice(self.aug, num):
+            augs = np.random.choice(self.aug, num, replace=False) #replace: prevent duplication for np.random.choice
+            for aug in augs:
                 augmentation.insert(
                     0,
                     aug
