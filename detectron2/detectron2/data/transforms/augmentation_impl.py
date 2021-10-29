@@ -21,6 +21,9 @@ from PIL import Image
 
 from .augmentation import Augmentation, _transform_to_aug
 from .transform import ExtentTransform, ResizeTransform, RotationTransform
+from .transform import ColorTransform
+from detectron2.data.operator.operator import ColorTemperature
+
 
 __all__ = [
     "FixedSizeCrop",
@@ -612,3 +615,12 @@ class RandomLighting(Augmentation):
         return BlendTransform(
             src_image=self.eigen_vecs.dot(weights * self.eigen_vals), src_weight=1.0, dst_weight=1.0
         )
+
+
+class ColorTempturatureAugmentation(Augmentation):
+    def __init__(self):
+        self.op = ColorTemperature()
+        return
+
+    def get_transform(self, image):
+        return ColorTransform(self.op)

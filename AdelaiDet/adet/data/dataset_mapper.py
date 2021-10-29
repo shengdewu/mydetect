@@ -12,6 +12,7 @@ from detectron2.data.dataset_mapper import DatasetMapper
 from detectron2.data.detection_utils import SizeMismatchError
 from detectron2.structures import BoxMode
 
+from .augmentation import RandomCropWithInstance
 from .detection_utils import (annotations_to_instances, build_augmentation,
                               transform_instance_annotations)
 
@@ -61,6 +62,20 @@ class DatasetMapperWithBasis(DatasetMapper):
             "Rebuilding the augmentations. The previous augmentations will be overridden."
         )
         self.augmentation = build_augmentation(cfg, is_train)
+
+        if is_train and cfg.INPUT.CROP.ENABLED:
+            self.augmentation.insert(
+                0,
+                RandomCropWithInstance(
+                    cfg.INPUT.CROP.TYPE,
+                    cfg.INPUT.CROP.SIZE,
+                    cfg.INPUT.CROP.CROP_INSTANCE,
+                    prob=cfg.INPUT.CROP.PROB
+                )
+            )
+            logging.getLogger(__name__).info(
+                "Cropping used in training: " + str(RandomCropWithInstance)
+            )
 
         self.random_augmentation = None
         if is_train:

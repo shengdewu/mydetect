@@ -74,7 +74,12 @@ _C.INPUT.CROP.TYPE = "relative_range"
 # Size of crop in range (0, 1] if CROP.TYPE is "relative" or "relative_range" and in number of
 # pixels if CROP.TYPE is "absolute"
 _C.INPUT.CROP.SIZE = [0.9, 0.9]
+_C.INPUT.CROP.PROB = 0.5
 
+_C.INPUT.RANDOM_FLIP = CN({"ENABLED": False})
+_C.INPUT.RANDOM_FLIP.PROB = 0.5
+_C.INPUT.RANDOM_FLIP.HORIZONTAL = True
+_C.INPUT.RANDOM_FLIP.VERTICAL = False
 
 # Whether the model needs RGB, YUV, HSV etc.
 # Should be one of the modes defined here, as we use PIL to read the image:

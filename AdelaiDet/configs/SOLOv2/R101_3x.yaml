@@ -11,22 +11,17 @@ SOLVER:
 
 DATALOADER:
   NUM_WORKERS: 1
+  ASPECT_RATIO_GROUPING: False
 
 INPUT:
   MIN_SIZE_TRAIN: (640, 672, 704, 736)
   MAX_SIZE_TRAIN: 800
 
-  HFLIP_TRAIN: False
-
   # `True` if cropping is used for data augmentation during training
   CROP:
     ENABLED: True
-    # Cropping type. See documentation of `detectron2.data.transforms.RandomCrop` for explanation.
-    TYPE: "relative_range"
-    # Size of crop in range (0, 1] if CROP.TYPE is "relative" or "relative_range" and in number of
-    # pixels if CROP.TYPE is "absolute"
     SIZE: [0.7, 0.7]
-  # `True` if cropping is used for data augmentation during training
+    PROB: 0.5
   BRIGHT:
     ENABLED: True
     MIN: 0.5
@@ -44,4 +39,12 @@ INPUT:
 
   COLOR:
     ENABLED: True
+
+  RANDOM_FLIP:
+    ENABLED: True
+    PROB: 0.5
+    HORIZONTAL: True
+    VERTICAL: False
+
+
 

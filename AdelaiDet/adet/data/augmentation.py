@@ -5,6 +5,7 @@ from fvcore.transforms import transform as T
 
 from detectron2.data.transforms import RandomCrop, StandardAugInput, RandomSaturation, RandomContrast, RandomBrightness
 from detectron2.data.transforms.augmentation import Augmentation
+from detectron2.data.transforms.augmentation_impl import ColorTempturatureAugmentation
 from adet.data.transform import ColorTransform
 import logging
 
@@ -93,7 +94,7 @@ class RandomCropWithInstance(RandomCrop):
     """ Instance-aware cropping.
     """
 
-    def __init__(self, crop_type, crop_size, crop_instance=True):
+    def __init__(self, crop_type, crop_size, crop_instance=True, prob=0.5):
         """
         Args:
             crop_instance (bool): if False, extend cropping boxes to avoid cropping instances
@@ -101,8 +102,12 @@ class RandomCropWithInstance(RandomCrop):
         super().__init__(crop_type, crop_size)
         self.crop_instance = crop_instance
         self.input_args = ("image", "boxes")
+        self.prob = prob
 
     def get_transform(self, img, boxes):
+        if np.random.random() < self.prob:
+            return T.NoOpTransform()
+
         image_size = img.shape[:2]
         crop_size = self.get_crop_size(image_size)
         return gen_crop_transform_with_instance(
@@ -130,18 +135,6 @@ class RandomAugmentation:
     @staticmethod
     def __build_random_augmentation(cfg):
         random_augmentation = list()
-
-        if cfg.INPUT.CROP.ENABLED:
-            random_augmentation.append(
-                RandomCropWithInstance(
-                    cfg.INPUT.CROP.TYPE,
-                    cfg.INPUT.CROP.SIZE,
-                    cfg.INPUT.CROP.CROP_INSTANCE,
-                )
-            )
-            logging.getLogger(__name__).info(
-                "Cropping used in training: " + str(random_augmentation[-1])
-            )
 
         if cfg.INPUT.BRIGHT.ENABLED:
             random_augmentation.append(
@@ -179,12 +172,13 @@ class RandomAugmentation:
 
         if cfg.INPUT.COLOR.ENABLED:
             random_augmentation.append(
-                RandomColorAugmentation()
+                ColorTempturatureAugmentation()
             )
 
             logging.getLogger(__name__).info(
                 "COLOR used in training: " + str(random_augmentation[-1])
             )
+
         return random_augmentation
 
     def __call__(self, base_aug):
@@ -192,7 +186,7 @@ class RandomAugmentation:
         do = len(self.aug) > 0 and np.random.random() < self.prob
         if do:
             augmentation = base_aug.copy()
-            num = np.random.randint(1, len(self.aug))
+            num = np.random.randint(1, len(self.aug) + 1)
             augs = np.random.choice(self.aug, num, replace=False) #replace: prevent duplication for np.random.choice
             for aug in augs:
                 augmentation.insert(

@@ -607,12 +607,11 @@ def build_augmentation(cfg, is_train):
         max_size = cfg.INPUT.MAX_SIZE_TEST
         sample_style = "choice"
     augmentation = [T.ResizeShortestEdge(min_size, max_size, sample_style)]
-    if is_train and cfg.INPUT.RANDOM_FLIP != "none":
+    if is_train and cfg.INPUT.RANDOM_FLIP.ENABLED:
         augmentation.append(
-            T.RandomFlip(
-                horizontal=cfg.INPUT.RANDOM_FLIP == "horizontal",
-                vertical=cfg.INPUT.RANDOM_FLIP == "vertical",
-            )
+                T.RandomFlip(prob=cfg.INPUT.RANDOM_FLIP.PROB,
+                             horizontal=cfg.INPUT.RANDOM_FLIP.HORIZONTAL,
+                             vertical=cfg.INPUT.RANDOM_FLIP.VERTICAL)
         )
     return augmentation
 

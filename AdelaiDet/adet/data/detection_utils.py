@@ -9,6 +9,7 @@ from detectron2.data.detection_utils import \
 from detectron2.data.detection_utils import \
     transform_instance_annotations as d2_transform_inst_anno
 
+from detectron2.data.transforms.augmentation_impl import RandomFlip
 
 def transform_instance_annotations(
     annotation, transforms, image_size, *, keypoint_hflip_indices=None
@@ -92,8 +93,12 @@ def build_augmentation(cfg, is_train):
     augmentation = []
     augmentation.append(T.ResizeShortestEdge(min_size, max_size, sample_style))
     if is_train:
-        if cfg.INPUT.HFLIP_TRAIN:
-            augmentation.append(T.RandomFlip())
+        if cfg.INPUT.RANDOM_FLIP.ENABLED:
+            augmentation.append(
+                RandomFlip(prob=cfg.INPUT.RANDOM_FLIP.PROB,
+                           horizontal=cfg.INPUT.RANDOM_FLIP.HORIZONTAL,
+                           vertical=cfg.INPUT.RANDOM_FLIP.VERTICAL)
+            )
         logger.info("Augmentations used in training: " + str(augmentation))
     return augmentation
 
