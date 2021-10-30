@@ -64,13 +64,21 @@ class CocoDetectionCP(CocoDetection):
         image = cv2.imread(os.path.join(self.root, path))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
+        h, w, c = image.shape
         #convert all of the target segmentations to masks
         #bboxes are expected to be (y1, x1, y2, x2, category_id)
         masks = []
         bboxes = []
         for ix, obj in enumerate(target):
             masks.append(self.coco.annToMask(obj))
-            bboxes.append(obj['bbox'] + [obj['category_id']] + [ix])
+            xmin, ymin, bw, bh = obj['bbox']
+            xmin = np.clip(xmin, 0, w)
+            ymin = np.clip(ymin, 0, w)
+            if xmin + bw > w:
+                bw = bw - (xmin + bw - w)
+            if ymin + bh > h:
+                bh = bh - (ymin + bh - h)
+            bboxes.append([xmin, ymin, bw, bh] + [obj['category_id']] + [ix])
 
         #pack outputs into a dict
         output = {
@@ -132,12 +140,13 @@ def draw_anno(image, annos):
 import numpy as np
 import time
 import json
+import tqdm
 if __name__ == '__main__':
 
     class RandomCrop(A.RandomCrop):
-        def __init__(self, height, width, always_apply=False, p=1.0):
+        def __init__(self, height, width, always_apply=False, p=1.0, no_random=True):
             super(RandomCrop, self).__init__(height, width, always_apply, p=p)
-
+            self.no_random = no_random
         @property
         def targets(self) -> Dict[str, Callable]:
             return {
@@ -151,16 +160,21 @@ if __name__ == '__main__':
                 "paste_bboxes": self.apply_to_bboxes,
             }
 
+        def get_params(self):
+            if self.no_random:
+                return {"h_start": 0, "w_start": 0}
+            else:
+                return {"h_start": np.random.random(), "w_start": np.random.random()}
+
     # img_root = '/mnt/data/coco.data/coco/val2014'
     # annFile = '/mnt/data/coco.data/coco/annotations/instances_val2014.json'
 
-    annFile = '/mnt/data/xintu.data/human.segmetn.coco.data/annotations/instances_val.json'
-    img_root = '/mnt/data/xintu.data/human.segmetn.coco.data/val'
+    annFile = '/mnt/data/xintu.data/human.segmetn.coco.data/annotations/instances_train.json'
+    img_root = '/mnt/data/xintu.data/human.segmetn.coco.data/train'
 
     coccp = CocoDetectionCP(img_root,
                             annFile,
                             None)
-
 
     output_root = '/mnt/data/xintu.data/human.segmetn.copypaste.data'
     annotations = os.path.join(output_root, 'annotations')
@@ -177,12 +191,16 @@ if __name__ == '__main__':
 
     img_id = 0
     ann_id = 0
-    for idx in range(0, len(coccp.ids), 2):
-        print(idx)
-        if idx != 10:
+    coco_idx = [i for i in range(len(coccp.ids))]
+    for num in tqdm.tqdm(range(pow(len(coccp.ids), 2))):
+        copy_idx = np.random.choice(coco_idx, 2, replace=False)
+
+        image = coccp.load_example(copy_idx[0])
+
+        if len(image['bboxes']) >= 3:
             continue
-        image = coccp.load_example(idx)
-        paste = coccp.load_example(idx+1)
+
+        paste = coccp.load_example(copy_idx[1])
 
         #select min mask
         area = 0
@@ -211,24 +229,27 @@ if __name__ == '__main__':
 
         ch = min(h, ph)
         cw = min(w, pw)
+
+        p = ch / max(h, ph)
+        p1 = cw / max(w, pw)
         transforms = A.Compose([
-            RandomCrop(ch, cw),
+            RandomCrop(ch, cw, no_random=p >= 0.8 and p1 >= 0.8),
             CopyPaste(blend=True, sigma=1, pct_objects_paste=1.0, p=1)
             ],
             bbox_params=A.BboxParams(format="coco")
         )
 
-        src_image = image['image'].copy()
-        draw(src_image, image['masks'], image['bboxes'])
-        src_paste = paste['image'].copy()
-        draw(src_paste, paste['masks'], paste['bboxes'])
+        # src_image = image['image'].copy()
+        # draw(src_image, image['masks'], image['bboxes'])
+        # src_paste = paste['image'].copy()
+        # draw(src_paste, paste['masks'], paste['bboxes'])
 
         output = transforms(
             image=image['image'], masks=image['masks'], bboxes=image['bboxes'],
             paste_image=paste['image'], paste_masks=paste['masks'], paste_bboxes=paste['bboxes']
         )
 
-        new_img_name = '{}-{}'.format(image['img_name'][:image['img_name'].rfind('.jpg')], paste['img_name'])
+        new_img_name = '{}-{}-{}'.format(num, image['img_name'][:image['img_name'].rfind('.jpg')], paste['img_name'])
         cv2.imwrite(os.path.join(train, new_img_name), output['image'])
         coco_images_dict = dict()
         coco_images_dict['license'] = 1
@@ -238,10 +259,9 @@ if __name__ == '__main__':
         coco_images_dict['width'] = output['image'].shape[1]
         coco_images_dict['date_captured'] = time.strftime('%Y-%m-%d %H:%M:%S')
         coco_images_dict['id'] = img_id
-
         dataset['images'].append(coco_images_dict)
-
         img_id += 1
+
         coco_annotations_list = list()
         for mask, (xmin, ymin, w, h, category_id, idx) in zip(output['masks'], output['bboxes']):
             coco_annotation_dict = dict()
@@ -260,15 +280,15 @@ if __name__ == '__main__':
         with open(os.path.join(annotations, 'instances_train_bck.json'), 'w') as w:
             json.dump(dataset, w)
 
-        draw_anno(output['image'], coco_annotations_list)
-
-        #draw(output['image'], output['masks'], output['bboxes'])
-
-        cv2.imshow('target', output['image'])
-        cv2.imshow('src_paste', src_paste)
-        cv2.imshow('src_image', src_image)
-
-        cv2.waitKey(0)
+        # draw_anno(output['image'], coco_annotations_list)
+        #
+        # #draw(output['image'], output['masks'], output['bboxes'])
+        #
+        # cv2.imshow('target', output['image'])
+        # # cv2.imshow('src_paste', src_paste)
+        # # cv2.imshow('src_image', src_image)
+        # #
+        # cv2.waitKey(3)
 
     with open(os.path.join(annotations, 'instances_train.json'), 'w') as w:
         json.dump(dataset, w)
