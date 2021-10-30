@@ -201,8 +201,10 @@ if __name__ == '__main__':
 
     img_id = 0
     ann_id = 0
+    process_name = list()
+
     coco_idx = [i for i in range(len(coccp.ids))]
-    for num in tqdm.tqdm(range(pow(len(coccp.ids), 2))):
+    for num in tqdm.tqdm(range(len(coccp.ids))):
         copy_idx = np.random.choice(coco_idx, 2, replace=False)
         print(copy_idx)
 
@@ -231,9 +233,13 @@ if __name__ == '__main__':
         if sidx < 0:
             continue
 
-        new_img_name = '{}-{}-{}'.format(num, image['img_name'][:image['img_name'].rfind('.jpg')], paste['img_name'])
+        new_img_name = '{}-{}'.format(image['img_name'][:image['img_name'].rfind('.jpg')], paste['img_name'])
         if new_img_name in skip_image:
             continue
+
+        if new_img_name in process_name:
+            continue
+        process_name.append(new_img_name)
 
         paste['masks'] = [paste['masks'][sidx]]
         xmin, ymin, w, h, c, i = paste['bboxes'][sidx]
