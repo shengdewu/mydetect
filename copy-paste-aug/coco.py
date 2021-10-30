@@ -62,7 +62,7 @@ class CocoDetectionCP(CocoDetection):
 
         path = self.coco.loadImgs(img_id)[0]['file_name']
         image = cv2.imread(os.path.join(self.root, path))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         h, w, c = image.shape
         #convert all of the target segmentations to masks
@@ -70,6 +70,13 @@ class CocoDetectionCP(CocoDetection):
         masks = []
         bboxes = []
         for ix, obj in enumerate(target):
+            drop_indx = list()
+            for i in range(len(obj['segmentation'])):
+                if len(obj['segmentation'][i]) <= 4 or len(obj['segmentation'][i]) % 2 != 0:
+                    drop_indx.append(i)
+            if len(drop_indx) != 0:
+                obj['segmentation'] = [obj['segmentation'][i] for i in range(len(obj['segmentation'])) if i not in drop_indx]
+
             masks.append(self.coco.annToMask(obj))
             xmin, ymin, bw, bh = obj['bbox']
             xmin = np.clip(xmin, 0, w)
@@ -182,18 +189,22 @@ if __name__ == '__main__':
     val = os.path.join(output_root, 'val')
     test = os.path.join(output_root, 'test')
 
+    skip_image = os.listdir(train)
     dataset = dict()
-    dataset['info'] = dict()
+    dataset['info'] = {'description':'copy paste', 'url':'http://xintu.com', 'version':'1.0', 'year':2020, 'contributor':'baoyong', 'date_created':time.strftime('%Y-%m-%d %H:%M:%S')}
     dataset['licenses'] = list()
+    dataset['licenses'].append({'url':'http://xintu.com', 'id':1, 'name':'augmentation'})
     dataset['images'] = list()
     dataset['annotations'] = list()
-    dataset['categories'] = list({'supercategory': 'person', 'id': 1, 'name': 'person'})
+    dataset['categories'] = list()
+    dataset['categories'].append({'supercategory': 'person', 'id': 1, 'name': 'person'})
 
     img_id = 0
     ann_id = 0
     coco_idx = [i for i in range(len(coccp.ids))]
     for num in tqdm.tqdm(range(pow(len(coccp.ids), 2))):
         copy_idx = np.random.choice(coco_idx, 2, replace=False)
+        print(copy_idx)
 
         image = coccp.load_example(copy_idx[0])
 
@@ -218,6 +229,10 @@ if __name__ == '__main__':
                 area = a
 
         if sidx < 0:
+            continue
+
+        new_img_name = '{}-{}-{}'.format(num, image['img_name'][:image['img_name'].rfind('.jpg')], paste['img_name'])
+        if new_img_name in skip_image:
             continue
 
         paste['masks'] = [paste['masks'][sidx]]
@@ -249,7 +264,6 @@ if __name__ == '__main__':
             paste_image=paste['image'], paste_masks=paste['masks'], paste_bboxes=paste['bboxes']
         )
 
-        new_img_name = '{}-{}-{}'.format(num, image['img_name'][:image['img_name'].rfind('.jpg')], paste['img_name'])
         cv2.imwrite(os.path.join(train, new_img_name), output['image'])
         coco_images_dict = dict()
         coco_images_dict['license'] = 1
@@ -280,15 +294,20 @@ if __name__ == '__main__':
         with open(os.path.join(annotations, 'instances_train_bck.json'), 'w') as w:
             json.dump(dataset, w)
 
+        # with open(os.path.join(annotations, 'instances_train_bck.json'), 'r') as r:
+        #     t = json.load(r)
+        #
+        # print('')
+
         # draw_anno(output['image'], coco_annotations_list)
         #
         # #draw(output['image'], output['masks'], output['bboxes'])
         #
         # cv2.imshow('target', output['image'])
-        # # cv2.imshow('src_paste', src_paste)
-        # # cv2.imshow('src_image', src_image)
-        # #
-        # cv2.waitKey(3)
+        # cv2.imshow('src_paste', src_paste)
+        # cv2.imshow('src_image', src_image)
+        #
+        # cv2.waitKey(0)
 
     with open(os.path.join(annotations, 'instances_train.json'), 'w') as w:
         json.dump(dataset, w)
