@@ -13,6 +13,10 @@ DATALOADER:
   NUM_WORKERS: 1
   ASPECT_RATIO_GROUPING: False
 
+DATASETS:
+  TRAIN: ("coco_2014_train",)
+  TEST: ("coco_2014_val",)
+
 INPUT:
   MIN_SIZE_TRAIN: (640, 672, 704, 736)
   MAX_SIZE_TRAIN: 800
@@ -33,7 +37,7 @@ INPUT:
     MAX: 1.6
 
   SATURATION:
-    ENABLED: True
+    ENABLED: False
     MIN: 0.3
     MAX: 2.0
 
