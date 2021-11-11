@@ -136,7 +136,7 @@ class DatasetMapperWithBasis(DatasetMapper):
         )
 
         aug_input = T.StandardAugInput(image, boxes=boxes, sem_seg=sem_seg_gt)
-        if self.random_augmentation is not None:
+        if self.random_augmentation is not None and len(self.random_augmentation) > 0:
             augmentation = self.random_augmentation(self.augmentation)
             transforms = aug_input.apply_augmentations(augmentation)
         else:

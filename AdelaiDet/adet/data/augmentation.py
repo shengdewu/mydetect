@@ -105,7 +105,7 @@ class RandomCropWithInstance(RandomCrop):
         self.prob = prob
 
     def get_transform(self, img, boxes):
-        if np.random.random() < self.prob:
+        if np.random.random() > self.prob:
             return T.NoOpTransform()
 
         image_size = img.shape[:2]
@@ -196,3 +196,6 @@ class RandomAugmentation:
             return augmentation
         else:
             return base_aug
+
+    def __len__(self):
+        return len(self.aug)
