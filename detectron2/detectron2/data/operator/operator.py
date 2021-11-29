@@ -452,7 +452,7 @@ class _KelvinToRGBTable(object):
 class ColorTemperature:
     def __init__(self):
         self.table = _KelvinToRGBTable()
-        self.kelvins = [i * 100 for i in np.arange(20, 400, 20)]
+        self.kelvins = [2000, 3500, 5500, 7000, 9000, 12000, 20000, 39000]
         return
 
     def __call__(self, image, factor=None):

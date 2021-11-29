@@ -81,6 +81,22 @@ _C.INPUT.RANDOM_FLIP.PROB = 0.5
 _C.INPUT.RANDOM_FLIP.HORIZONTAL = True
 _C.INPUT.RANDOM_FLIP.VERTICAL = False
 
+_C.INPUT.BRIGHT = CN({"ENABLED": False})
+_C.INPUT.BRIGHT.MIN = 0.6
+_C.INPUT.BRIGHT.MAX = 1.2
+
+_C.INPUT.CONTRAST = CN({"ENABLED": False})
+_C.INPUT.CONTRAST.MIN = 0.6
+_C.INPUT.CONTRAST.MAX = 1.2
+
+_C.INPUT.SATURATION = CN({"ENABLED": False})
+_C.INPUT.SATURATION.MIN = 0.6
+_C.INPUT.SATURATION.MAX = 1.2
+
+_C.INPUT.LIGHTING = CN({"ENABLED": False})
+
+_C.INPUT.COLOR = CN({"ENABLED": False})
+
 # Whether the model needs RGB, YUV, HSV etc.
 # Should be one of the modes defined here, as we use PIL to read the image:
 # https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes

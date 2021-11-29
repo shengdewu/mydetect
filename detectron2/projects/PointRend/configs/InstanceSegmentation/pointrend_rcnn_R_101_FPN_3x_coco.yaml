@@ -4,9 +4,47 @@ MODEL:
   MASK_ON: true
   RESNETS:
     DEPTH: 101
-#SOLVER:
-#  STEPS: (210000, 250000)
-#  MAX_ITER: 270000
-# To add COCO AP evaluation against the higher-quality LVIS annotations.
-# DATASETS:
-#   TEST: ("coco_2017_val", "lvis_v0.5_val_cocofied")
+
+SOLVER:
+  IMS_PER_BATCH: 1
+  BASE_LR: 0.002
+  BIAS_LR_FACTOR: 0.8
+  MAX_ITER: 2000
+  STEPS : (1000, 1500)
+DATASETS:
+  TRAIN: ("coco_2014_train",)
+  TEST: ("coco_2014_val",)
+
+INPUT:
+  MIN_SIZE_TRAIN: (640, 672, 704)
+  MAX_SIZE_TRAIN: 800
+
+  # `True` if cropping is used for data augmentation during training
+  CROP:
+    ENABLED: True
+    TYPE: "relative_range"
+    SIZE: [0.7, 0.7]
+    PROB: 1.0
+  BRIGHT:
+    ENABLED: True
+    MIN: 0.5
+    MAX: 1.6
+
+  CONTRAST:
+    ENABLED: True
+    MIN: 0.5
+    MAX: 1.6
+
+  SATURATION:
+    ENABLED: True
+    MIN: 0.3
+    MAX: 2.0
+
+  COLOR:
+    ENABLED: True
+
+  RANDOM_FLIP:
+    ENABLED: True
+    PROB: 0.5
+    HORIZONTAL: True
+    VERTICAL: False

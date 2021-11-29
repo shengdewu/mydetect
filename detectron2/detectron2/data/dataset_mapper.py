@@ -9,6 +9,8 @@ from detectron2.config import configurable
 
 from . import detection_utils as utils
 from . import transforms as T
+from .instance_augmentation import RandomCropWithInstance, RandomAugmentation
+
 
 """
 This file contains the default mapping that's applied to "dataset dicts".
@@ -47,6 +49,7 @@ class DatasetMapper:
         keypoint_hflip_indices: Optional[np.ndarray] = None,
         precomputed_proposal_topk: Optional[int] = None,
         recompute_boxes: bool = False,
+        random_augmentation = None
     ):
         """
         NOTE: this interface is experimental.
@@ -69,7 +72,7 @@ class DatasetMapper:
             assert use_instance_mask, "recompute_boxes requires instance masks"
         # fmt: off
         self.is_train               = is_train
-        self.augmentations          = T.AugmentationList(augmentations)
+        self.augmentations          = augmentations
         self.image_format           = image_format
         self.use_instance_mask      = use_instance_mask
         self.instance_mask_format   = instance_mask_format
@@ -77,6 +80,9 @@ class DatasetMapper:
         self.keypoint_hflip_indices = keypoint_hflip_indices
         self.proposal_topk          = precomputed_proposal_topk
         self.recompute_boxes        = recompute_boxes
+
+        self.random_augmentation = random_augmentation
+
         # fmt: on
         logger = logging.getLogger(__name__)
         mode = "training" if is_train else "inference"
@@ -91,6 +97,10 @@ class DatasetMapper:
         else:
             recompute_boxes = False
 
+        random_augmentation = None
+        if is_train:
+            random_augmentation = RandomAugmentation(cfg)
+
         ret = {
             "is_train": is_train,
             "augmentations": augs,
@@ -99,6 +109,7 @@ class DatasetMapper:
             "instance_mask_format": cfg.INPUT.MASK_FORMAT,
             "use_keypoint": cfg.MODEL.KEYPOINT_ON,
             "recompute_boxes": recompute_boxes,
+            "random_augmentation": random_augmentation
         }
 
         if cfg.MODEL.KEYPOINT_ON:
@@ -161,7 +172,12 @@ class DatasetMapper:
             sem_seg_gt = None
 
         aug_input = T.AugInput(image, sem_seg=sem_seg_gt)
-        transforms = self.augmentations(aug_input)
+        if self.random_augmentation is not None and len(self.random_augmentation) > 0:
+            augmentation = self.random_augmentation(self.augmentations)
+            transforms = aug_input.apply_augmentations(augmentation)
+        else:
+            transforms = aug_input.apply_augmentations(self.augmentations)
+
         image, sem_seg_gt = aug_input.image, aug_input.sem_seg
 
         image_shape = image.shape[:2]  # h, w
