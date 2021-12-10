@@ -79,8 +79,8 @@ _PREDEFINED_SPLITS_COCO["coco_person"] = {
 
 _PREDEFINED_SPLITS_XINTU = {}
 _PREDEFINED_SPLITS_XINTU["xintu"] = {
-    "coco_2014_train": ("human.segmetn.coco.data/train", "human.segmetn.coco.data/annotations/instances_train.json"),
-    "coco_2014_val": ("human.segmetn.coco.data/val", "human.segmetn.coco.data/annotations/instances_val.json"),
+    "coco_2014_train": ("human.segmentation.coco.data/train", "human.segmentation.coco.data/annotations/instances_train.json"),
+    "coco_2014_val": ("human.segmentation.coco.data/val", "human.segmentation.coco.data/annotations/instances_val.json"),
 }
 
 _PREDEFINED_SPLITS_COCO_PANOPTIC = {
@@ -439,9 +439,9 @@ if __name__.endswith(".builtin"):
     else:
         register_all_coco(_root)
     # draw('/mnt/data/coco.data/coco', 'train2014', 'instances_train2014.json', 'check/bbox', 'check/mask')
-    # xintu2coco('/mnt/data/xintu.data/human.segmetn.coco.data')
-    # draw('/mnt/data/xintu.data/human.segmetn.coco.data', 'train', 'instances_train.json', 'check/bbox', 'check/mask')
-    # draw('/mnt/data/xintu.data/human.segmetn.coco.data', 'train', 'instances_val.json', 'check/bbox', 'check/mask')
+    # xintu2coco('/mnt/data/xintu.data/human.segmentation.coco.data')
+    # draw('/mnt/data/xintu.data/human.segmentation.coco.data', 'train', 'instances_train.json', 'check/bbox', 'check/mask')
+    # draw('/mnt/data/xintu.data/human.segmentation.coco.data', 'train', 'instances_val.json', 'check/bbox', 'check/mask')
     # register_all_lvis(_root)
     # register_all_cityscapes(_root)
     # register_all_cityscapes_panoptic(_root)

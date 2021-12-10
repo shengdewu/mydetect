@@ -1,16 +1,85 @@
 _BASE_: Base-PointRend-RCNN-FPN.yaml
 MODEL:
+  DEVICE: "cuda"
   MASK_ON: True
-  WEIGHTS: "detectron2://ImageNetPretrained/FAIR/X-101-32x8d.pkl"
+  WEIGHTS: "/mnt/data/pretrain.model/detectron2/ImageNetPretrained/FAIR/X-101-32x8d.pkl"
   PIXEL_STD: [57.375, 57.120, 58.395]
   RESNETS:
     STRIDE_IN_1X1: False  # this is a C2 model
     NUM_GROUPS: 32
     WIDTH_PER_GROUP: 8
     DEPTH: 101
+    DEFORM_ON_PER_STAGE: [True, True, True, True]
+    DEFORM_MODULATED: False
+    DEFORM_NUM_GROUPS: 1
+    NORM: "FrozenBN"
+
+  ROI_MASK_HEAD:
+    IN_FEATURES: ["p2", "p3", "p4", "p5", "p6"] # Names of the input feature maps to be used by a coarse mask head.
+    OUTPUT_SIDE_RESOLUTION: 14  #only for inference stage
+    POINT_HEAD_ON: True
+
+  ROI_HEADS:
+    NUM_CLASSES: 1
+    IN_FEATURES: ["p2", "p3", "p4", "p5", "p6"]
+
+  FPN:
+    NORM: ""
+
+  ANCHOR_GENERATOR:
+    SIZES: [[32], [64], [128], [256], [512]]  # One size for each in feature map
+    ASPECT_RATIOS: [[1.0, 1.5, 2.5, 3.5]]  # Three aspect ratios (same for all in feature maps) height / width
+                                     # [124.91, 190.27],[244.35, 292.64],[115.97, 405.23] [w,h]
+                                     # [180.0, 471.56],[292.81, 485.48],[444.32, 494.21]
+  POINT_HEAD:
+    FC_DIM: 256
+    NUM_FC: 3
+    IN_FEATURES: ["p2", "p3", "p4", "p5", "p6"]
+    NUM_CLASSES: 1
+    TRAIN_NUM_POINTS: 676 #26*26
+    SUBDIVISION_NUM_POINTS: 4900 #70*70  #only for inference stage
+    SUBDIVISION_STEPS: 5 #only for inference stage
+
+INPUT:
+  MIN_SIZE_TRAIN: (768, 800, 832, 864, 896, 928)
+  MAX_SIZE_TRAIN: 1333
+
+  # `True` if cropping is used for data augmentation during training
+  CROP:
+    ENABLED: True
+    TYPE: "relative_range"
+    SIZE: [0.7, 0.7]
+    PROB: 1.0
+  BRIGHT:
+    ENABLED: True
+    MIN: 0.5
+    MAX: 1.6
+
+  CONTRAST:
+    ENABLED: True
+    MIN: 0.5
+    MAX: 1.6
+
+  SATURATION:
+    ENABLED: True
+    MIN: 0.3
+    MAX: 2.0
+
+  COLOR:
+    ENABLED: True
+
+  RANDOM_FLIP:
+    ENABLED: True
+    PROB: 0.5
+    HORIZONTAL: True
+    VERTICAL: False
+
 SOLVER:
-  STEPS: (210000, 250000)
-  MAX_ITER: 270000
-# To add COCO AP evaluation against the higher-quality LVIS annotations.
-# DATASETS:
-#   TEST: ("coco_2017_val", "lvis_v0.5_val_cocofied")
+  IMS_PER_BATCH: 1
+  BASE_LR: 0.02
+  STEPS: (10000, 50000)
+  MAX_ITER: 70000
+
+DATASETS:
+  TRAIN: ("coco_2014_train",)
+  TEST: ("coco_2014_val",)

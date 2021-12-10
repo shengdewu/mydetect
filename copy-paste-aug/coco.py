@@ -72,6 +72,8 @@ class CocoDetectionCP(CocoDetection):
         for ix, obj in enumerate(target):
             drop_indx = list()
             for i in range(len(obj['segmentation'])):
+                if isinstance(obj['segmentation'], dict):
+                    continue
                 if len(obj['segmentation'][i]) <= 4 or len(obj['segmentation'][i]) % 2 != 0:
                     drop_indx.append(i)
             if len(drop_indx) != 0:
@@ -173,11 +175,11 @@ if __name__ == '__main__':
             else:
                 return {"h_start": np.random.random(), "w_start": np.random.random()}
 
-    # img_root = '/mnt/data/coco.data/coco/val2014'
-    # annFile = '/mnt/data/coco.data/coco/annotations/instances_val2014.json'
+    img_root = '/mnt/data/coco.data/coco/val2014'
+    annFile = '/mnt/data/coco.data/coco/annotations/instances_val2014.json'
 
-    annFile = '/mnt/data/xintu.data/human.segmetn.coco.data/annotations/instances_train.json'
-    img_root = '/mnt/data/xintu.data/human.segmetn.coco.data/train'
+    # annFile = '/mnt/data/xintu.data/human.segmetn.coco.data/annotations/instances_train.json'
+    # img_root = '/mnt/data/xintu.data/human.segmetn.coco.data/train'
 
     coccp = CocoDetectionCP(img_root,
                             annFile,
@@ -185,11 +187,11 @@ if __name__ == '__main__':
 
     output_root = '/mnt/data/xintu.data/human.segmetn.copypaste.data'
     annotations = os.path.join(output_root, 'annotations')
-    train = os.path.join(output_root, 'train')
+    #train = os.path.join(output_root, 'train')
     val = os.path.join(output_root, 'val')
     test = os.path.join(output_root, 'test')
 
-    skip_image = os.listdir(train)
+    skip_image = os.listdir(val)
     dataset = dict()
     dataset['info'] = {'description':'copy paste', 'url':'http://xintu.com', 'version':'1.0', 'year':2020, 'contributor':'baoyong', 'date_created':time.strftime('%Y-%m-%d %H:%M:%S')}
     dataset['licenses'] = list()
@@ -208,7 +210,7 @@ if __name__ == '__main__':
         copy_idx = np.random.choice(coco_idx, 2, replace=False)
         print(copy_idx)
 
-        image = coccp.load_example(copy_idx[0])
+        image = coccp.load_example(35465)
 
         if len(image['bboxes']) >= 3:
             continue
@@ -270,7 +272,7 @@ if __name__ == '__main__':
             paste_image=paste['image'], paste_masks=paste['masks'], paste_bboxes=paste['bboxes']
         )
 
-        cv2.imwrite(os.path.join(train, new_img_name), output['image'])
+        cv2.imwrite(os.path.join(val, new_img_name), output['image'])
         coco_images_dict = dict()
         coco_images_dict['license'] = 1
         coco_images_dict['file_name'] = new_img_name
@@ -297,7 +299,7 @@ if __name__ == '__main__':
             dataset['annotations'].extend(coco_annotations_list)
             ann_id += 1
 
-        with open(os.path.join(annotations, 'instances_train_bck.json'), 'w') as w:
+        with open(os.path.join(annotations, 'instances_val_bck.json'), 'w') as w:
             json.dump(dataset, w)
 
         # with open(os.path.join(annotations, 'instances_train_bck.json'), 'r') as r:
@@ -306,16 +308,16 @@ if __name__ == '__main__':
         # print('')
 
         # draw_anno(output['image'], coco_annotations_list)
-        #
-        # #draw(output['image'], output['masks'], output['bboxes'])
-        #
+
+        #draw(output['image'], output['masks'], output['bboxes'])
+
         # cv2.imshow('target', output['image'])
         # cv2.imshow('src_paste', src_paste)
         # cv2.imshow('src_image', src_image)
         #
         # cv2.waitKey(0)
 
-    with open(os.path.join(annotations, 'instances_train.json'), 'w') as w:
+    with open(os.path.join(annotations, 'instances_val.json'), 'w') as w:
         json.dump(dataset, w)
 
 

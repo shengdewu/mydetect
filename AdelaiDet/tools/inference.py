@@ -24,7 +24,8 @@ from tools.train_net import Trainer
 from adet.config import get_cfg
 from detectron2.engine import default_argument_parser, default_setup
 from detectron2.data.dataset_mapper import DatasetMapper
-from pycocotools.coco import COCO
+import pycocotools.mask
+from detectron2.data.datasets.coco import load_coco_json
 
 
 def setup(args):
@@ -88,18 +89,19 @@ if __name__ == "__main__":
     print("Command Line Args:", args)
     model, data_transform = create_model(args)
 
-    root_path = '/mnt/data/xintu.data/human.segmetn.coco.data'
+    #root_path = '/mnt/data/xintu.data/human.segmetn.coco.data'
     #'/mnt/data/xintu.data/human.segmetn.coco.data', ['instances_val.json'], ['annotations', 'val']
-    #root_path ='/mnt/data/coco.data/coco/test2014'
-    coco_api = COCO(os.path.join(root_path, 'annotations', 'instances_val.json'))
+    root_path ='/mnt/data/data.set/coco.data/coco'
+    dataset_dicts = load_coco_json(os.path.join(root_path, 'annotations', 'instances_val2014.json'), os.path.join(root_path, 'val2014'), 'coco')
 
     total_time = 0
     total_index = 0
-    for dataset in coco_api.dataset['images']:
-        img_name = dataset['file_name']
+    for dataset in dataset_dicts:
+        file_name = dataset['file_name']
+        print(file_name)
         stat_time = time.time()
         try:
-            instances = inference(model, data_transform, os.path.join(root_path, 'val', img_name))
+            instances = inference(model, data_transform, file_name)
         except Exception as err:
             print(err)
             continue
@@ -111,7 +113,7 @@ if __name__ == "__main__":
         pred_masks = instances.get('pred_masks')  # n * h * w
         h, w = instances.image_size
 
-        img = cv2.imread(os.path.join(root_path, 'val', img_name))
+        img = cv2.imread(file_name)
 
         raw = img.copy()
         total = scores.shape[0]
@@ -122,26 +124,47 @@ if __name__ == "__main__":
             if score < 0.7:
                 continue
             pred_class = pred_classes[i].numpy()
-            if pred_class != 0:
-                continue
 
             pred_mask = np.asarray(pred_masks[i], dtype=np.uint8)
 
             polygons, has_holes = mask_to_polygons(pred_mask)
 
-            color = coco_meta['thing_colors'][i + 10]
+            color = coco_meta['thing_colors'][pred_class]
             thing = coco_meta['thing_classes'][pred_class]
 
-            for polygon in polygons:
-                poly_box = np.array([int(p + 0.5) for p in polygon], dtype=np.int).reshape(-1, 2)
-                cv2.polylines(img, [poly_box], isClosed=False, color=color, thickness=8)
-                # cv2.fillPoly(img, [poly_box], lineType=cv2.LINE_8, color=color)
-            cv2.putText(img, '{}/{}'.format(thing, round(score, 2)), (int(polygons[0][0]), int(polygons[0][1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 1, color, thickness=5)
-            #cv2.imwrite('/mnt/data/human.model/pointrend.xintu/inference/{}-m{}{}'.format(img_name[:img_name.rfind('.')], i, img_name[img_name.rfind('.'):]), pred_mask.astype(img.dtype)*255)
+            polygons = [np.asarray(p).astype(np.int).reshape(-1, 2) for p in polygons]
+
+            cv2.polylines(img, polygons, isClosed=False, color=color, thickness=3)
+            # cv2.fillPoly(img, [poly_box], lineType=cv2.LINE_8, color=color)
+            cv2.putText(img, '{}/{}'.format(thing, round(score, 2)), (int(polygons[0][0][0]), int(polygons[0][0][1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 1, color, thickness=2)
 
             # mask = cv2.bitwise_and(img, img, mask=pred_mask.astype(img.dtype))
             # #cv2.floodFill(img, mask, (0, 0), color_map[i+10][0], color_map[i+10][0], color_map[i+10][0], cv2.FLOODFILL_FIXED_RANGE)
-        cv2.imwrite('/mnt/data/train.output/solov2.my.output/out_image/{}'.format(img_name), np.hstack((raw, img)))
+        for ann in dataset['annotations']:
+            color = coco_meta['thing_colors'][ann['category_id']]
+            thing = coco_meta['thing_classes'][ann['category_id']]
+
+            segm = ann['segmentation']
+
+            if isinstance(segm, list):
+                # polygons
+                polygons = [np.asarray(p).astype(np.int).reshape(-1, 2) for p in segm]
+            elif isinstance(segm, dict):
+                # RLE
+                mask = pycocotools.mask.decode(segm)
+                polygons, has_holes = mask_to_polygons(mask)
+                polygons = [np.asarray(p).astype(np.int).reshape(-1, 2) for p in polygons]
+            else:
+                raise ValueError(
+                    "Cannot transform segmentation of type '{}'!"
+                    "Supported types are: polygons as list[list[float] or ndarray],"
+                    " COCO-style RLE as a dict.".format(type(segm))
+                )
+
+            cv2.polylines(raw, polygons, isClosed=False, color=color, thickness=3)
+            cv2.putText(raw, '{}'.format(thing), (int(polygons[0][0][0]), int(polygons[0][0][1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 1, color, thickness=2)
+
+        cv2.imwrite('/mnt/data/train.output/solov2.output/{}'.format(file_name[file_name.rfind('/')+1:]), np.hstack((raw, img)))
 
     print('cost {} in {} images: avg: {}'.format(total_time, total_index, total_time/total_index))
 

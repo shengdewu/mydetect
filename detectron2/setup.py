@@ -13,6 +13,7 @@ from torch.utils.cpp_extension import CUDA_HOME, CppExtension, CUDAExtension
 torch_ver = [int(x) for x in torch.__version__.split(".")[:2]]
 assert torch_ver >= [1, 7], "Requires PyTorch >= 1.7"
 
+print(CUDA_HOME)
 
 def get_version():
     init_py_path = path.join(path.abspath(path.dirname(__file__)), "detectron2", "__init__.py")
@@ -66,6 +67,7 @@ def get_extensions():
     if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) or os.getenv(
         "FORCE_CUDA", "0"
     ) == "1":
+        print('USE CUDA COMPILER...')
         extension = CUDAExtension
         sources += source_cuda
 

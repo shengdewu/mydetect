@@ -1,0 +1,14 @@
+FROM dl.nvidia/cuda:10.1-cudnn7-devel
+
+RUN pip3 install --no-cache-dir scikit-image && \
+    pip3 install --no-cache-dir shapely rapidfuzz && \
+    pip3 install --no-cache-dir fvcore==0.1.5.post20210924 && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* ~/.cache && \
+    pip3 list | grep fvcore
+
+COPY ./detectron2 /code/detectron2
+RUN cd /code/detectron2 && python3 setup.py build develop
+
+WORKDIR /code/detectron2
+
+ENTRYPOINT ["python3", "projects/PointRend/train_net.py"]
