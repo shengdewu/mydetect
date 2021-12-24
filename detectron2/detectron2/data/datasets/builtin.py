@@ -389,6 +389,17 @@ def xintu2coco(root):
 
                 anns_ids.append(cant['id'])
 
+            #     c = (np.random.random((1, 3))*255).astype(np.int).tolist()[0]
+            #     polys = list()
+            #
+            #     for seg in ants['segmentation']:
+            #         poly = np.array(seg).reshape((int(len(seg) / 2), 2)).astype(np.int)
+            #         polys.append(poly)
+            #
+            #     cv2.polylines(img, polys, isClosed=False, color=c, thickness=3)
+            #     cv2.putText(img, '{}'.format(bbox_id_start), (int(ants['bbox'][0]), int(ants['bbox'][1])), cv2.FONT_HERSHEY_SIMPLEX, 1, c, thickness=2)
+            # cv2.imwrite('{}/{}'.format(root, file_name), img)
+
         except Exception as err:
             for k, v in annotation.items():
                 cant = v.copy()
