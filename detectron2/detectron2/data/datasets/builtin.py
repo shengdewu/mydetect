@@ -273,6 +273,9 @@ def draw(root, img_path, json_path, bbox_path, mask_path):
     import numpy as np
     import pycocotools._mask as _mask
 
+    os.makedirs(os.path.join(root, bbox_path), exist_ok=True)
+    os.makedirs(os.path.join(root, mask_path), exist_ok=True)
+
     with open('{}/annotations/{}'.format(root, json_path), 'r') as f:
         dataset_dict = json.load(f)
 
@@ -330,6 +333,7 @@ def xintu2coco(root):
     import json
     import cv2
     import numpy as np
+    import shutil
 
     with open('{}/annotations/photo_cut_point_coco.json'.format(root), 'r') as f:
         dataset_dict = json.loads(f.read().replace('][', ','))
@@ -353,7 +357,7 @@ def xintu2coco(root):
         image_id_start += 1
         cimage['id'] = image_id_start
         file_name = image['file_name']
-        image_path = os.path.join(root, 'train', file_name)
+        image_path = os.path.join(root, 'images', file_name)
         img = cv2.imread(image_path)
         if img is None:
             print('cannot identify image file {}'.format(image_path))
@@ -408,24 +412,46 @@ def xintu2coco(root):
     category['name'] = 'person'
     modify_dataset['categories'].append(category)
 
-    with open('{}/annotations/instances_train.json'.format(root), 'w') as f:
+    with open('{}/annotations/instances_total.json'.format(root), 'w') as f:
         json.dump(modify_dataset, f)
 
-    val_dataset = dict()
+    train_dataset = dict()
+    train_dataset['info'] = modify_dataset['info']
+    train_dataset['licenses'] = modify_dataset['licenses']
+    train_dataset['images'] = list()
+    train_dataset['annotations'] = list()
+    train_dataset['categories'] = modify_dataset['categories']
 
+    val_dataset = dict()
     val_dataset['info'] = modify_dataset['info']
     val_dataset['licenses'] = modify_dataset['licenses']
     val_dataset['images'] = list()
     val_dataset['annotations'] = list()
     val_dataset['categories'] = modify_dataset['categories']
+
+    os.makedirs(os.path.join(root, 'train'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'val'), exist_ok=True)
+
     ids = list(images_ids.keys())
-    val_ids = np.random.choice(ids, int(len(ids)*0.2))
-    for val_id in set(val_ids):
-        val_dataset['images'].append(images_ids[val_id])
-        val_dataset['annotations'].extend(annotations_ids[val_id])
+    val_ids = np.random.choice(ids, int(len(ids)*0.1))
+    for id in set(ids):
+        img_info = images_ids[id]
+        file_name = img_info['file_name']
+        img_path = os.path.join(root, 'images', file_name)
+        if id in val_ids:
+            val_dataset['images'].append(img_info)
+            val_dataset['annotations'].extend(annotations_ids[id])
+            shutil.copy2(img_path, os.path.join(root, 'val', file_name))
+        else:
+            train_dataset['images'].append(img_info)
+            train_dataset['annotations'].extend(annotations_ids[id])
+            shutil.copy2(img_path, os.path.join(root, 'train', file_name))
 
     with open('{}/annotations/instances_val.json'.format(root), 'w') as f:
         json.dump(val_dataset, f)
+
+    with open('{}/annotations/instances_train.json'.format(root), 'w') as f:
+        json.dump(train_dataset, f)
 
 # True for open source;
 # Internally at fb, we register them elsewhere
@@ -438,10 +464,9 @@ if __name__.endswith(".builtin"):
         register_all_xintu(_root)
     else:
         register_all_coco(_root)
-    # draw('/mnt/data/coco.data/coco', 'train2014', 'instances_train2014.json', 'check/bbox', 'check/mask')
-    # xintu2coco('/mnt/data/xintu.data/human.segmentation.coco.data')
-    # draw('/mnt/data/xintu.data/human.segmentation.coco.data', 'train', 'instances_train.json', 'check/bbox', 'check/mask')
-    # draw('/mnt/data/xintu.data/human.segmentation.coco.data', 'train', 'instances_val.json', 'check/bbox', 'check/mask')
+    # xintu2coco('/mnt/data/data.set/xintu.data/human.segmentation.coco.data')
+    # draw('/mnt/data/data.set/xintu.data/human.segmentation.coco.data', 'train', 'instances_train.json', 'check/bbox', 'check/mask')
+    # draw('/mnt/data/data.set/xintu.data/human.segmentation.coco.data', 'val', 'instances_val.json', 'check/bbox', 'check/mask')
     # register_all_lvis(_root)
     # register_all_cityscapes(_root)
     # register_all_cityscapes_panoptic(_root)
